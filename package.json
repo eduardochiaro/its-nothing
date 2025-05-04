@@ -1,0 +1,58 @@
+{
+  "name": "its-nothing",
+  "version": "1.0.0",
+  "description": "Watchface for pebble smartwatches inspired by NothingOS by NOTHING",
+  "main": "src/main.c",
+  "scripts": {
+    "build": "wscript build",
+    "clean": "wscript clean"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": [
+    "pebble",
+    "watchface",
+    "hours",
+    "minutes"
+  ],
+  "author": "Eduardo Chiaro",
+  "license": "MIT",
+  "pebble": {
+    "displayName": "It`s Nothing",
+    "uuid": "d51a6924-f9cd-4f2c-bf31-6fb54ab7031c",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite"
+    ],
+    "capabilities": [
+      "health",
+      "configurable"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "resources": {
+      "media": [
+        {
+          "type": "font",
+          "name": "NDOT_FONT_14",
+          "file": "fonts/ndot-47-inspired-by-nothing/ndot-47-inspired-by-nothing.ttf"
+        },
+        {
+          "type": "font",
+          "name": "NDOT_FONT_16",
+          "file": "fonts/ndot-47-inspired-by-nothing/ndot-47-inspired-by-nothing.ttf"
+        },
+        {
+          "type": "font",
+          "name": "NDOT_FONT_51",
+          "file": "fonts/ndot-47-inspired-by-nothing/ndot-47-inspired-by-nothing.ttf"
+        }
+      ]
+    }
+  }
+}
