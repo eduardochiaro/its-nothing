@@ -1,5 +1,6 @@
 # It's Nothing - Watchface for Pebble
 ![Screenshot](./assets/screenshot_1.png)
+
 Pebble watchface inspired by NothingOS by Nothing Technology Limited.
 This watchface is still under construction, feedbacks are very welcome.
 
