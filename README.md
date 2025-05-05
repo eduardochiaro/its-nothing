@@ -1,14 +1,14 @@
 # It's Nothing - Watchface for Pebble
 ![Screenshot](./assets/screenshot_1.png)
 
-Pebble watchface inspired by NothingOS by Nothing Technology Limited.
-This watchface is still under construction, feedbacks are very welcome.
+This Pebble watchface, inspired by NothingOS by Nothing Technology Limited, is still in the construction phase. Feedback is highly appreciated.
 
-User can change the following:
-- Change background Color (only Pebbles with color screen)
-- Change Tex Color (only Pebbles with color screen)
-- 12/24 Hour setting
-- Show AM/PM (only if above setting is set to 12 hours)
+Users can modify the following settings:
 
-This watchfare use font [NDOT 47](https://fontstruct.com/fontstructions/show/2047444/ndot-45-inspired-by-nothing-1) licensed under the SIL Open Font License.
-Nothing Technology Limited owns the copyright for NOTHING brand.
+- Change the background color (only for Pebbles with color screens)
+- Change the text color (only for Pebbles with color screens)
+- Set the 12/24 hour setting
+- Show AM/PM (only if the 12/24 hour setting is set to 12 hours)
+
+This watchface utilizes the font [NDOT 47](https://fontstruct.com/fontstructions/show/2047444/ndot-45-inspired-by-nothing-1), which is licensed under the SIL Open Font License. 
+Nothing Technology Limited owns the copyright for the NOTHING brand.
