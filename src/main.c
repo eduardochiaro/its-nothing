@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include <ctype.h>
+#include "main.h"
 
 static Window *s_main_window;
 static Layer *s_canvas_layer;
@@ -8,23 +9,55 @@ static GFont s_date_font;
 static GFont s_ampm_font;
 static int s_step_count = 0;
 
-#define IS_24 false
+// A struct for our specific settings (see main.h)
+ClaySettings settings;
+
+// Initialize the default settings
+static void prv_default_settings() {
+    settings.BackgroundColor = GColorBlack;
+    settings.ForegroundColor = GColorWhite;
+    settings.Setting24H = true;
+    settings.SettingShowAMPM = false;
+}
+
+// Read settings from persistent storage
+static void prv_load_settings() {
+    // Load the default settings
+    prv_default_settings();
+    // Read settings from persistent storage, if they exist
+    persist_read_data(SETTINGS_KEY, &settings, sizeof(settings));
+}
+
+// Save the settings to persistent storage
+static void prv_save_settings() {
+    persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
+    // Update the display based on new settings
+    prv_update_display();
+}
+
+// Update the display elements
+static void prv_update_display() {
+    // Background color
+    window_set_background_color(s_main_window, settings.BackgroundColor);
+
+    layer_set_update_proc(s_canvas_layer, draw_watchface);
+}
 
 // Function to update step count
 static void update_steps() {
     s_step_count = health_service_sum_today(HealthMetricStepCount);
 }
 
-static void draw_watchface(Layer *layer, GContext *ctx) {
+static void draw_time(Layer *layer, GContext *ctx) {
+
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
 
     // Get the current hour and minute
-    // Get the current hour and minute
     int hour = t->tm_hour;
         
     // Convert to 12-hour format if IS_24 is false
-    if (IS_24 == false) {
+    if (settings.Setting24H == false) {
         hour = hour % 12;
         if (hour == 0) hour = 12; // 12 instead of 0 for 12-hour format
     }
@@ -33,31 +66,6 @@ static void draw_watchface(Layer *layer, GContext *ctx) {
 
     // Get the bounds of the canvas
     GRect bounds = layer_get_bounds(layer);
-    
-    // Set drawing context - changed to white text
-    graphics_context_set_text_color(ctx, GColorWhite);
-    
-    // Get weekday and day
-    char weekday_buffer[16];
-    strftime(weekday_buffer, sizeof(weekday_buffer), "%a", t);
-    
-    // Convert weekday to uppercase
-    for(int i = 0; weekday_buffer[i]; i++) {
-        weekday_buffer[i] = toupper((unsigned char)weekday_buffer[i]);
-    }
-    
-    char day_buffer[8];
-    snprintf(day_buffer, sizeof(day_buffer), "%d", t->tm_mday);
-    
-    // Create date string (weekday + day)
-    char date_text[24];
-    snprintf(date_text, sizeof(date_text), "%s %s", weekday_buffer, day_buffer);
-    
-    // Draw date at the top
-    int date_height = 20; // Approximate height needed for date text
-    GRect date_bounds = GRect(0, 5, bounds.size.w, date_height);
-    graphics_draw_text(ctx, date_text, s_date_font, date_bounds,
-                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
     
     // Create strings for hour and minute
     char hour_text[8];
@@ -72,29 +80,29 @@ static void draw_watchface(Layer *layer, GContext *ctx) {
     
     GSize minute_text_size = graphics_text_layout_get_content_size(minute_text, s_time_font, 
                            bounds, GTextOverflowModeWordWrap, GTextAlignmentCenter);
-    
+
     // Calculate vertical spacing and positioning
     int vertical_spacing = 1; // Space between hour and minute
     int total_time_height = hour_text_size.h + minute_text_size.h + vertical_spacing;
     
     // Calculate the starting y position to center the time in the available space
     // (accounting for the date area at top)
-    int available_height = bounds.size.h - date_height - 15; // 15px for padding
-    int time_start_y = date_height - 10 + (available_height - total_time_height) / 2;
+    int available_height = bounds.size.h - 15; // 15px for padding
+    int time_start_y = (available_height - total_time_height) / 2;
     
     // Draw hour (centered horizontally)
     GRect hour_bounds = GRect(0, time_start_y, bounds.size.w, hour_text_size.h);
     graphics_draw_text(ctx, hour_text, s_time_font, hour_bounds,
-                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
     
     // Draw minute below hour (centered horizontally)
     GRect minute_bounds = GRect(0, time_start_y + hour_text_size.h + vertical_spacing, 
-                              bounds.size.w, minute_text_size.h);
+                                bounds.size.w, minute_text_size.h);
     graphics_draw_text(ctx, minute_text, s_time_font, minute_bounds,
-                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-                      
+                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
     // Add AM/PM indicator when not in 24-hour mode
-    if (!IS_24) {
+    if (!settings.Setting24H && settings.SettingShowAMPM) {
         // Determine if it's AM or PM based on the original hour
         bool is_pm = t->tm_hour >= 12;
         char ampm_text[3];
@@ -124,6 +132,41 @@ static void draw_watchface(Layer *layer, GContext *ctx) {
         graphics_draw_text(ctx, ampm_text, s_ampm_font, ampm_bounds,
                           GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
     }
+}
+
+static void draw_watchface(Layer *layer, GContext *ctx) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+
+    // Get the bounds of the canvas
+    GRect bounds = layer_get_bounds(layer);
+    
+    // Set drawing context - changed to white text
+    graphics_context_set_text_color(ctx, settings.ForegroundColor);
+    
+    // Get weekday and day
+    char weekday_buffer[16];
+    strftime(weekday_buffer, sizeof(weekday_buffer), "%a", t);
+    
+    // Convert weekday to uppercase
+    for(int i = 0; weekday_buffer[i]; i++) {
+        weekday_buffer[i] = toupper((unsigned char)weekday_buffer[i]);
+    }
+    
+    char day_buffer[8];
+    snprintf(day_buffer, sizeof(day_buffer), "%d", t->tm_mday);
+    
+    // Create date string (weekday + day)
+    char date_text[24];
+    snprintf(date_text, sizeof(date_text), "%s %s", weekday_buffer, day_buffer);
+    
+    // Draw date at the top
+    int date_height = 20; // Approximate height needed for date text
+    GRect date_bounds = GRect(0, 5, bounds.size.w, date_height);
+    graphics_draw_text(ctx, date_text, s_date_font, date_bounds,
+                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    
+    draw_time(layer, ctx);
                       
     // Format and display steps at the bottom
     if (s_step_count > 0) {
@@ -149,6 +192,8 @@ static void main_window_load(Window *window) {
     s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_NDOT_FONT_51));
     s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_NDOT_FONT_16));
     s_ampm_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_NDOT_FONT_14));
+
+    prv_update_display();
 }
 
 static void main_window_unload(Window *window) {
@@ -167,14 +212,48 @@ static void health_handler(HealthEventType event, void *context) {
     }
 }
 
+static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) {
+    // Background Color
+    Tuple *bg_color_t = dict_find(iter, MESSAGE_KEY_BackgroundColor);
+    if (bg_color_t) {
+        settings.BackgroundColor = GColorFromHEX(bg_color_t->value->int32);
+    }
+
+    // Foreground Color
+    Tuple *fg_color_t = dict_find(iter, MESSAGE_KEY_ForegroundColor);
+    if (fg_color_t) {
+        settings.ForegroundColor = GColorFromHEX(fg_color_t->value->int32);
+    }
+
+    // 12/24 Hour Format
+    Tuple *setting_24h_t = dict_find(iter, MESSAGE_KEY_Setting24H);
+    if(setting_24h_t) {
+        settings.Setting24H = setting_24h_t->value->int32 == 1;
+    }
+
+    // 12/24 Hour Format
+    Tuple *setting_ampm_t = dict_find(iter, MESSAGE_KEY_SettingShowAMPM);
+    if(setting_ampm_t) {
+        settings.SettingShowAMPM = setting_ampm_t->value->int32 == 1;
+    }
+
+    // Save the new settings to persistent storage
+    prv_save_settings();
+}
+
 static void init() {
+    prv_load_settings();
     s_main_window = window_create();
     // Changed background color to black
-    window_set_background_color(s_main_window, GColorBlack);
+    window_set_background_color(s_main_window, settings.BackgroundColor);
     window_set_window_handlers(s_main_window, (WindowHandlers) {
         .load = main_window_load,
         .unload = main_window_unload,
     });
+
+    // Open AppMessage connection
+    app_message_register_inbox_received(prv_inbox_received_handler);
+    app_message_open(128, 128);
     
     // Initialize health service
     health_service_events_subscribe(health_handler, NULL);

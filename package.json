@@ -7,7 +7,9 @@
     "build": "wscript build",
     "clean": "wscript clean"
   },
-  "dependencies": {},
+  "dependencies": {
+    "pebble-clay": "^1.0.4"
+  },
   "devDependencies": {},
   "keywords": [
     "pebble",
@@ -35,6 +37,12 @@
     "watchapp": {
       "watchface": true
     },
+    "messageKeys": [
+      "ForegroundColor",
+      "BackgroundColor",
+      "Setting24H",
+      "SettingShowAMPM"
+    ],
     "resources": {
       "media": [
         {
