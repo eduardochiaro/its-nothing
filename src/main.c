@@ -131,7 +131,7 @@ static void draw_watchface(Layer *layer, GContext *ctx) {
 
     graphics_context_set_text_color(ctx, settings.ForegroundColor);
 
-    GRect top_bounds = GRect(0, 0, bounds.size.w, 20);
+    GRect top_bounds = GRect(0, 10, bounds.size.w, 20);
     GRect low_bounds = GRect(0, bounds.size.h - 30, bounds.size.w, 20);
     
     //top module
