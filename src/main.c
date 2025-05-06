@@ -1,6 +1,8 @@
 #include <pebble.h>
 #include <ctype.h>
 #include "main.h"
+#include "modules/date.h"
+#include "modules/steps.h"
 
 static Window *s_main_window;
 static Layer *s_canvas_layer;
@@ -18,6 +20,8 @@ static void prv_default_settings() {
     settings.ForegroundColor = GColorWhite;
     settings.Setting24H = true;
     settings.SettingShowAMPM = false;
+    snprintf(settings.TopModule, sizeof(settings.TopModule), "date");
+    snprintf(settings.BottomModule, sizeof(settings.BottomModule), "steps");
 }
 
 // Read settings from persistent storage
@@ -37,9 +41,10 @@ static void prv_save_settings() {
 
 // Update the display elements
 static void prv_update_display() {
+
+    layer_mark_dirty(s_canvas_layer);
     // Background color
     window_set_background_color(s_main_window, settings.BackgroundColor);
-
     layer_set_update_proc(s_canvas_layer, draw_watchface);
 }
 
@@ -49,7 +54,7 @@ static void update_steps() {
 }
 
 static void draw_time(Layer *layer, GContext *ctx) {
-    // Get the current time
+
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
 
@@ -95,7 +100,7 @@ static void draw_time(Layer *layer, GContext *ctx) {
     graphics_draw_text(ctx, minute_text, s_time_font, minute_bounds, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
     // Draw AM/PM if 12-hour format is selected
-    if (!settings.Setting24H && settings.SettingShowAMPM) {
+    if (settings.Setting24H == false && settings.SettingShowAMPM) {
         // Determine if it's AM or PM based on the original hour
         bool is_pm = t->tm_hour >= 12;
         char ampm_text[3];
@@ -120,47 +125,24 @@ static void draw_time(Layer *layer, GContext *ctx) {
 }
 
 static void draw_watchface(Layer *layer, GContext *ctx) {
-    time_t now = time(NULL);
-    struct tm *t = localtime(&now);
 
     // Get the bounds of the canvas
     GRect bounds = layer_get_bounds(layer);
 
     graphics_context_set_text_color(ctx, settings.ForegroundColor);
-    
-    // Get weekday and day
-    char weekday_buffer[16];
-    strftime(weekday_buffer, sizeof(weekday_buffer), "%a", t);
-    
-    // Convert weekday to uppercase
-    for(int i = 0; weekday_buffer[i]; i++) {
-        weekday_buffer[i] = toupper((unsigned char)weekday_buffer[i]);
-    }
-    
-    // Create date string (weekday + day)
-    char day_buffer[8];
-    char date_text[24];
 
-    snprintf(day_buffer, sizeof(day_buffer), "%d", t->tm_mday);
-    snprintf(date_text, sizeof(date_text), "%s %s", weekday_buffer, day_buffer);
+    GRect top_bounds = GRect(0, 0, bounds.size.w, 20);
+    GRect low_bounds = GRect(0, bounds.size.h - 30, bounds.size.w, 20);
     
-    // Draw date at the top
-    GRect date_bounds = GRect(0, 5, bounds.size.w, 20);
-    graphics_draw_text(ctx, date_text, s_date_font, date_bounds,
-                      GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-    
+    //top module
+    if (strcmp(settings.TopModule, "steps") == 0) draw_steps(layer, ctx, top_bounds, s_date_font, s_step_count);
+    if (strcmp(settings.TopModule, "date") == 0) draw_date(layer, ctx, top_bounds, s_date_font);
+    // center module
     draw_time(layer, ctx);
-                      
-    // Format and display steps at the bottom
-    if (s_step_count > 0) {
-        char steps_buffer[16];
-        snprintf(steps_buffer, sizeof(steps_buffer), "%d", s_step_count);
-        
-        int steps_margin = 10;
-        GRect steps_bounds = GRect(0, bounds.size.h - steps_margin - 20, bounds.size.w, 20);
-        
-        graphics_draw_text(ctx, steps_buffer, s_date_font, steps_bounds, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-    }
+    //bottom module
+    if (strcmp(settings.BottomModule, "steps") == 0) draw_steps(layer, ctx, low_bounds, s_date_font, s_step_count);
+    if (strcmp(settings.BottomModule, "date") == 0) draw_date(layer, ctx, low_bounds, s_date_font);
+
 }
 
 static void main_window_load(Window *window) {
@@ -216,6 +198,18 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     Tuple *setting_ampm_t = dict_find(iter, MESSAGE_KEY_SettingShowAMPM);
     if(setting_ampm_t) {
         settings.SettingShowAMPM = setting_ampm_t->value->int32 == 1;
+    }
+
+    // Top Module
+    Tuple *top_module_t = dict_find(iter, MESSAGE_KEY_TopModule);
+    if (top_module_t) {
+        snprintf(settings.TopModule, sizeof(settings.TopModule), "%s", top_module_t->value->cstring);
+    }
+
+    // Bottom Module
+    Tuple *bottom_module_t = dict_find(iter, MESSAGE_KEY_BottomModule);
+    if (bottom_module_t) {
+        snprintf(settings.BottomModule, sizeof(settings.BottomModule), "%s", bottom_module_t->value->cstring);
     }
 
     // Save the new settings to persistent storage
