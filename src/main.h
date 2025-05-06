@@ -1,7 +1,6 @@
 #pragma once
 #include <pebble.h>
 
-
 #define SETTINGS_KEY 1
 
 // A structure containing our settings
@@ -10,6 +9,8 @@ typedef struct ClaySettings {
   GColor ForegroundColor;
   bool Setting24H;
   bool SettingShowAMPM;
+  char TopModule[20];
+  char BottomModule[20];
 } __attribute__((__packed__)) ClaySettings;
 
 // Function prototypes

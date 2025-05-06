@@ -48,6 +48,55 @@ module.exports = [
     ]
   },
   {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Modules"
+      },
+      {
+        "type": "select",
+        "messageKey": "TopModule",
+        "defaultValue": "date",
+        "label": "Top Module",
+        "options": [
+          { 
+            "label": "Empty", 
+            "value": "" 
+          },
+          { 
+            "label": "Date",
+            "value": "date" 
+          },
+          { 
+            "label": "Steps",
+            "value": "steps" 
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "BottomModule",
+        "defaultValue": "steps",
+        "label": "Bottom Module",
+        "options": [
+          { 
+            "label": "Empty", 
+            "value": "" 
+          },
+          { 
+            "label": "Date",
+            "value": "date" 
+          },
+          { 
+            "label": "Steps",
+            "value": "steps" 
+          }
+        ]
+      }
+    ]
+  },
+  {
     "type": "submit",
     "defaultValue": "Save Settings"
   }
