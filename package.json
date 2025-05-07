@@ -1,6 +1,6 @@
 {
   "name": "its-nothing",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Watchface for pebble smartwatches inspired by NothingOS by NOTHING",
   "main": "src/main.c",
   "scripts": {
@@ -50,18 +50,8 @@
       "media": [
         {
           "type": "font",
-          "name": "NDOT_FONT_14",
-          "file": "fonts/ndot-47-inspired-by-nothing/ndot-47-inspired-by-nothing.ttf"
-        },
-        {
-          "type": "font",
-          "name": "NDOT_FONT_16",
-          "file": "fonts/ndot-47-inspired-by-nothing/ndot-47-inspired-by-nothing.ttf"
-        },
-        {
-          "type": "font",
-          "name": "NDOT_FONT_51",
-          "file": "fonts/ndot-47-inspired-by-nothing/ndot-47-inspired-by-nothing.ttf"
+          "name": "TINY_FONT_16",
+          "file": "fonts/Tiny5-Regular.ttf"
         }
       ]
     }
