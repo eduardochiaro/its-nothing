@@ -42,7 +42,7 @@ module.exports = [
         "type": "toggle",
         "messageKey": "SettingShowAMPM",
         "label": "Show AM/PM",
-        "defaultValue": true,
+        "defaultValue": false,
         "description": "Display AM/PM next to minutes, only works if `Use 24-Hour Format` setting is off."
       },
     ]

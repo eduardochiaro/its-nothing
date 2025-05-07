@@ -108,7 +108,7 @@ static void draw_time(Layer *layer, GContext *ctx) {
 
     GSize ampm_size = graphics_text_layout_get_content_size(ampm_text, s_date_font,  bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft);
     
-    int ampm_x = (bounds.size.w / 1.3) + 2; 
+    int ampm_x = (bounds.size.w / 2) + ((hight_of_block / 7) * 5) + 10; 
     // Align bottom of AM/PM with bottom of minutes
     int ampm_y = (hight_of_block * 2) + 40 - (ampm_size.h);
     
