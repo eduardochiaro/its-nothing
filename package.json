@@ -50,8 +50,8 @@
       "media": [
         {
           "type": "font",
-          "name": "TINY_FONT_16",
-          "file": "fonts/Tiny5-Regular.ttf"
+          "name": "PIXEL_FONT_20",
+          "file": "fonts/PixelifySans-VariableFont_wght.ttf"
         }
       ]
     }

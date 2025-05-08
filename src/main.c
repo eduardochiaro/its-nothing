@@ -101,9 +101,9 @@ static void draw_time(Layer *layer, GContext *ctx) {
     char ampm_text[3];
     
     if (is_pm) {
-        strcpy(ampm_text, "PM");
+        strcpy(ampm_text, "pm");
     } else {
-        strcpy(ampm_text, "AM");
+        strcpy(ampm_text, "am");
     }
 
     GSize ampm_size = graphics_text_layout_get_content_size(ampm_text, s_date_font,  bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft);
@@ -124,7 +124,7 @@ static void draw_watchface(Layer *layer, GContext *ctx) {
 
   graphics_context_set_text_color(ctx, settings.ForegroundColor);
 
-  GRect top_bounds = GRect(0, 10, bounds.size.w, 20);
+  GRect top_bounds = GRect(0, 0, bounds.size.w, 20);
   GRect low_bounds = GRect(0, bounds.size.h - 30, bounds.size.w, 20);
   
   //top module
@@ -145,7 +145,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_get_root_layer(window), s_canvas_layer);
   
   // Load fonts
-  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_TINY_FONT_16));
+  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXEL_FONT_20));
 
   prv_update_display();
 }
