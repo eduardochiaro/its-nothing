@@ -12,7 +12,7 @@ void draw_date(Layer *layer, GContext *ctx, GRect location, GFont font_used) {
   
   // Convert weekday to uppercase
   for(int i = 0; weekday_buffer[i]; i++) {
-    weekday_buffer[i] = tolower((unsigned char)weekday_buffer[i]);
+    weekday_buffer[i] = toupper((unsigned char)weekday_buffer[i]);
   }
   
   // Create date string (weekday + day)

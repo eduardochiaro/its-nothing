@@ -17,8 +17,8 @@ ClaySettings settings;
 static void prv_default_settings() {
   settings.BackgroundColor = GColorBlack;
   settings.ForegroundColor = GColorWhite;
-  settings.Setting24H = true;
-  settings.SettingShowAMPM = false;
+  settings.Setting24H = false;
+  settings.SettingShowAMPM = true;
   snprintf(settings.TopModule, sizeof(settings.TopModule), "date");
   snprintf(settings.BottomModule, sizeof(settings.BottomModule), "steps");
 }
@@ -101,9 +101,9 @@ static void draw_time(Layer *layer, GContext *ctx) {
     char ampm_text[3];
     
     if (is_pm) {
-        strcpy(ampm_text, "pm");
+        strcpy(ampm_text, "PM");
     } else {
-        strcpy(ampm_text, "am");
+        strcpy(ampm_text, "AM");
     }
 
     GSize ampm_size = graphics_text_layout_get_content_size(ampm_text, s_date_font,  bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft);
