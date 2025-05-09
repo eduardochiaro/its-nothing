@@ -19,6 +19,7 @@ static void prv_default_settings() {
   settings.ForegroundColor = GColorWhite;
   settings.Setting24H = false;
   settings.SettingShowAMPM = true;
+  settings.DotThickness = false;
   snprintf(settings.TopModule, sizeof(settings.TopModule), "date");
   snprintf(settings.BottomModule, sizeof(settings.BottomModule), "steps");
 }
@@ -65,6 +66,11 @@ static void draw_time(Layer *layer, GContext *ctx) {
     hour = hour % 12;
     if (hour == 0) hour = 12;
   }
+
+  int dot_size = 0;
+  if (settings.DotThickness == true) {
+    dot_size = 1;
+  }
   
   int minute = t->tm_min;
 
@@ -76,23 +82,23 @@ static void draw_time(Layer *layer, GContext *ctx) {
   // get second number from the hour
   int second_hour_digit = hour % 10;
 
-  int hight_of_block = (bounds.size.h / 2) - 40;
+  int hight_of_block = (bounds.size.h / 2) - 40 - dot_size;
 
-  GRect first_hour_bound = GRect(0, 35, bounds.size.w / 2, hight_of_block);
-  draw_single_digit(layer, ctx, first_hour_bound, hight_of_block, first_hour_digit, 1, settings.ForegroundColor);
+  GRect first_hour_bound = GRect(0, 35 - (dot_size * 2), bounds.size.w / 2, hight_of_block);
+  draw_single_digit(layer, ctx, first_hour_bound, hight_of_block, first_hour_digit, 1, settings.ForegroundColor, dot_size);
 
-  GRect second_hour_bound = GRect(bounds.size.w / 2, 35, bounds.size.w / 2, hight_of_block);
-  draw_single_digit(layer, ctx, second_hour_bound, hight_of_block, second_hour_digit, 0, settings.ForegroundColor);
+  GRect second_hour_bound = GRect(bounds.size.w / 2, 35 - (dot_size * 2), bounds.size.w / 2, hight_of_block);
+  draw_single_digit(layer, ctx, second_hour_bound, hight_of_block, second_hour_digit, 0, settings.ForegroundColor, dot_size);
 
   // get first number from the minute
   int first_minute_digit = minute < 10 ? 0 : minute / 10;
   // get second number from the minute
   int second_minute_digit = minute % 10;
 
-  GRect first_minute_bound = GRect(0, 35 + hight_of_block + 10, bounds.size.w / 2, hight_of_block);
-  draw_single_digit(layer, ctx, first_minute_bound, hight_of_block, first_minute_digit, 1, settings.ForegroundColor);
-  GRect second_minute_bound = GRect(bounds.size.w / 2, 35 + hight_of_block + 10, bounds.size.w / 2, hight_of_block);
-  draw_single_digit(layer, ctx, second_minute_bound, hight_of_block, second_minute_digit, 0, settings.ForegroundColor);
+  GRect first_minute_bound = GRect(0, 35 + hight_of_block + 10 - (dot_size * 2), bounds.size.w / 2, hight_of_block);
+  draw_single_digit(layer, ctx, first_minute_bound, hight_of_block, first_minute_digit, 1, settings.ForegroundColor, dot_size);
+  GRect second_minute_bound = GRect(bounds.size.w / 2, 35 + hight_of_block + 10 - (dot_size * 2), bounds.size.w / 2, hight_of_block);
+  draw_single_digit(layer, ctx, second_minute_bound, hight_of_block, second_minute_digit, 0, settings.ForegroundColor, dot_size);
 
   // Draw AM/PM if 12-hour format is selected
   if (settings.Setting24H == false && settings.SettingShowAMPM) {
@@ -105,12 +111,23 @@ static void draw_time(Layer *layer, GContext *ctx) {
     } else {
         strcpy(ampm_text, "AM");
     }
-
+    
     GSize ampm_size = graphics_text_layout_get_content_size(ampm_text, s_date_font,  bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft);
     
-    int ampm_x = (bounds.size.w / 2) + ((hight_of_block / 7) * 5) + 10; 
+    int top_padding = 8;
+    int left_padding = 0;
+    if (settings.DotThickness == true) {
+      top_padding = 0;
+      #if defined(PBL_PLATFORM_CHALK)
+        // For Chalk, adjust the padding
+        top_padding = 10;
+      #endif
+      left_padding = 5;
+    }
+
+    int ampm_x = (bounds.size.w / 2) + ((hight_of_block / 7) * 5) + 10 + left_padding; 
     // Align bottom of AM/PM with bottom of minutes
-    int ampm_y = (hight_of_block * 2) + 40 - (ampm_size.h);
+    int ampm_y = bounds.size.h - 30 - ampm_size.h - top_padding;
     
     GRect ampm_bounds = GRect(ampm_x, ampm_y, 30, 20);
     graphics_draw_text(ctx, ampm_text, s_date_font, ampm_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
@@ -145,7 +162,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_get_root_layer(window), s_canvas_layer);
   
   // Load fonts
-  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXEL_FONT_20));
+  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXEL_FONT_22));
 
   prv_update_display();
 }
@@ -189,6 +206,12 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   Tuple *setting_ampm_t = dict_find(iter, MESSAGE_KEY_SettingShowAMPM);
   if(setting_ampm_t) {
     settings.SettingShowAMPM = setting_ampm_t->value->int32 == 1;
+  }
+
+  // Dot Thickness
+  Tuple *dot_thickness_t = dict_find(iter, MESSAGE_KEY_DotThickness);
+  if(dot_thickness_t) {
+    settings.DotThickness = dot_thickness_t->value->int32 == 1;
   }
 
   // Top Module

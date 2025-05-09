@@ -1,6 +1,6 @@
 #include <pebble.h>
 
-void draw_single_digit(Layer *layer, GContext *ctx, GRect location, int height, int digit, int position, GColor color) {
+void draw_single_digit(Layer *layer, GContext *ctx, GRect location, int height, int digit, int position, GColor color, int increase_dot_size) {
   // Position if 0 align to the left, if 1 align to the right
   // 1 = dot is present, 0 = no dot
   static const uint8_t DIGIT_PATTERNS[10][7][5] = {
@@ -115,7 +115,7 @@ void draw_single_digit(Layer *layer, GContext *ctx, GRect location, int height, 
   int total_spaces_horizontal = 4; // 4 spaces between 5 columns
   
   // get dot size based on height available
-  int dot_size = (height - total_spaces_vertical) / 7;
+  int dot_size = (height - total_spaces_vertical) / 7 + increase_dot_size;
   int width = (dot_size * 5) + total_spaces_horizontal;
   
   // Calculate x position based on alignment

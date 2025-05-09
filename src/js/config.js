@@ -35,16 +35,24 @@ module.exports = [
         "type": "toggle",
         "messageKey": "Setting24H",
         "label": "Use 24-Hour Format",
-        "defaultValue": true,
+        "defaultValue": false,
         "description": "Use 24-Hours or 12 Hours format."
       },
       {
         "type": "toggle",
         "messageKey": "SettingShowAMPM",
         "label": "Show AM/PM",
-        "defaultValue": false,
+        "defaultValue": true,
         "description": "Display AM/PM next to minutes, only works if `Use 24-Hour Format` setting is off."
       },
+      {
+        "type": "toggle",
+        "messageKey": "DotThickness",
+        "label": "Make Number Dots Thicker",
+        "defaultValue": false,
+        "description": "Make the dots in the numbers thicker."
+      },
+
     ]
   },
   {

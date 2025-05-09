@@ -43,6 +43,7 @@
       "ForegroundColor",
       "Setting24H",
       "SettingShowAMPM",
+      "DotThickness",
       "TopModule",
       "BottomModule"
     ],
@@ -50,8 +51,8 @@
       "media": [
         {
           "type": "font",
-          "name": "PIXEL_FONT_20",
-          "file": "fonts/Doto_Rounded-Regular.ttf"
+          "name": "PIXEL_FONT_22",
+          "file": "fonts/ndot-47-inspired-by-nothing.ttf"
         }
       ]
     }
