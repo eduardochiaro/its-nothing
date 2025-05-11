@@ -1,5 +1,7 @@
 # It's Nothing - Watchface for Pebble
 ![Screenshot](./assets/screenshot_1.png)
+![Screenshot](./assets/screenshot_2.png)
+![Screenshot](./assets/screenshot_3.png)
 
 [https://apps.rebble.io/en_US/application/68190b36404fff0009e209bb](Rebble App Store)
 
