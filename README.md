@@ -12,7 +12,7 @@ Users can modify the following settings:
 - Set the 12/24 hour setting
 - Show AM/PM (only if the 12/24 hour setting is set to 12 hours)
 - Set Top and Bottom modules to be Steps, Date, or Empty
-- Set an optional thickness for the time dots.
+- Set an optional thickness for the time dots
 
 This watchface utilizes the font [NDOT 47](https://fontstruct.com/fontstructions/show/2047444/ndot-45-inspired-by-nothing-1), which is licensed under the SIL Open Font License. 
 Nothing Technology Limited owns the copyright for the NOTHING brand.
