@@ -9,6 +9,7 @@ typedef struct ClaySettings {
   GColor ForegroundColor;
   bool Setting24H;
   bool SettingShowAMPM;
+  bool DotThickness;
   char TopModule[20];
   char BottomModule[20];
 } __attribute__((__packed__)) ClaySettings;
