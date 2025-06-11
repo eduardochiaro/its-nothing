@@ -3,7 +3,7 @@
 ![Screenshot](./assets/screenshot_2.png)
 ![Screenshot](./assets/screenshot_3.png)
 
-[https://apps.rebble.io/en_US/application/68190b36404fff0009e209bb](Rebble App Store)
+[Rebble app store page](https://apps.rebble.io/en_US/application/68190b36404fff0009e209bb)
 
 This Pebble watchface, inspired by NothingOS by Nothing Technology Limited, is still in the construction phase. Feedback is highly appreciated.
 
