@@ -79,6 +79,10 @@ module.exports = [
           { 
             "label": "Steps",
             "value": "steps" 
+          },
+          { 
+            "label": "Weather",
+            "value": "weather" 
           }
         ]
       },
@@ -99,8 +103,28 @@ module.exports = [
           { 
             "label": "Steps",
             "value": "steps" 
+          },
+          { 
+            "label": "Weather",
+            "value": "weather" 
           }
         ]
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Weather"
+      },
+      {
+        "type": "toggle",
+        "messageKey": "WeatherUseFahrenheit",
+        "label": "Use Fahrenheit",
+        "defaultValue": false,
+        "description": "Display temperature in Fahrenheit instead of Celsius."
       }
     ]
   },

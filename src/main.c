@@ -4,6 +4,7 @@
 #include "modules/date.h"
 #include "modules/steps.h"
 #include "modules/number.h"
+#include "modules/weather.h"
 
 static Window *s_main_window;
 static Layer *s_canvas_layer;
@@ -21,7 +22,10 @@ static void prv_default_settings() {
   settings.SettingShowAMPM = true;
   settings.DotThickness = false;
   snprintf(settings.TopModule, sizeof(settings.TopModule), "date");
-  snprintf(settings.BottomModule, sizeof(settings.BottomModule), "steps");
+  snprintf(settings.BottomModule, sizeof(settings.BottomModule), "weather");
+  settings.WeatherTemperature = 0;
+  snprintf(settings.WeatherCondition, sizeof(settings.WeatherCondition), "--");
+  settings.WeatherUseFahrenheit = false;
 }
 
 // Read settings from persistent storage
@@ -41,11 +45,8 @@ static void prv_save_settings() {
 
 // Update the display elements
 static void prv_update_display() {
-
   layer_mark_dirty(s_canvas_layer);
-  // Background color
   window_set_background_color(s_main_window, settings.BackgroundColor);
-  layer_set_update_proc(s_canvas_layer, draw_watchface);
 }
 
 // Function to update step count
@@ -53,106 +54,96 @@ static void update_steps() {
   s_step_count = health_service_sum_today(HealthMetricStepCount);
 }
 
-static void draw_time(Layer *layer, GContext *ctx) {
+// Helper function to draw a module at specified bounds
+static void draw_module(Layer *layer, GContext *ctx, GRect bounds, const char *module_name) {
+  if (strcmp(module_name, "steps") == 0) draw_steps(layer, ctx, bounds, s_date_font, s_step_count);
+  else if (strcmp(module_name, "date") == 0) draw_date(layer, ctx, bounds, s_date_font);
+  else if (strcmp(module_name, "weather") == 0) draw_weather(layer, ctx, bounds, s_date_font, settings.WeatherTemperature, settings.WeatherCondition, settings.WeatherUseFahrenheit);
+}
 
+static void draw_time(Layer *layer, GContext *ctx) {
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
 
   // Get the current hour and minute
   int hour = t->tm_hour;
       
-  // Convert to 12-hour format if IS_24 is false
-  if (settings.Setting24H == false) {
+  // Convert to 12-hour format if not 24H
+  if (!settings.Setting24H) {
     hour = hour % 12;
     if (hour == 0) hour = 12;
   }
 
-  int dot_size = 0;
-  if (settings.DotThickness == true) {
-    dot_size = 1;
-  }
-  
+  int dot_size = settings.DotThickness ? 1 : 0;
   int minute = t->tm_min;
 
   // Get the bounds of the canvas
   GRect bounds = layer_get_bounds(layer);
 
-  // get first number from the hour
-  int first_hour_digit = hour < 10 ? 0 : hour / 10;
-  // get second number from the hour
+  // Calculate digits
+  int first_hour_digit = hour / 10;
   int second_hour_digit = hour % 10;
-
-  int hight_of_block = (bounds.size.h / 2) - 40 - dot_size;
-
-  GRect first_hour_bound = GRect(0, 35 - (dot_size * 2), bounds.size.w / 2, hight_of_block);
-  draw_single_digit(layer, ctx, first_hour_bound, hight_of_block, first_hour_digit, 1, settings.ForegroundColor, dot_size);
-
-  GRect second_hour_bound = GRect(bounds.size.w / 2, 35 - (dot_size * 2), bounds.size.w / 2, hight_of_block);
-  draw_single_digit(layer, ctx, second_hour_bound, hight_of_block, second_hour_digit, 0, settings.ForegroundColor, dot_size);
-
-  // get first number from the minute
-  int first_minute_digit = minute < 10 ? 0 : minute / 10;
-  // get second number from the minute
+  int first_minute_digit = minute / 10;
   int second_minute_digit = minute % 10;
 
-  GRect first_minute_bound = GRect(0, 35 + hight_of_block + 10 - (dot_size * 2), bounds.size.w / 2, hight_of_block);
-  draw_single_digit(layer, ctx, first_minute_bound, hight_of_block, first_minute_digit, 1, settings.ForegroundColor, dot_size);
-  GRect second_minute_bound = GRect(bounds.size.w / 2, 35 + hight_of_block + 10 - (dot_size * 2), bounds.size.w / 2, hight_of_block);
-  draw_single_digit(layer, ctx, second_minute_bound, hight_of_block, second_minute_digit, 0, settings.ForegroundColor, dot_size);
+  int height_of_block = (bounds.size.h / 2) - 40 - dot_size;
+  int y_offset = TIME_TOP_MARGIN - (dot_size * 2);
+
+  // Draw hour digits
+  GRect first_hour_bound = GRect(0, y_offset, bounds.size.w / 2, height_of_block);
+  draw_single_digit(layer, ctx, first_hour_bound, height_of_block, first_hour_digit, 1, settings.ForegroundColor, dot_size);
+
+  GRect second_hour_bound = GRect(bounds.size.w / 2, y_offset, bounds.size.w / 2, height_of_block);
+  draw_single_digit(layer, ctx, second_hour_bound, height_of_block, second_hour_digit, 0, settings.ForegroundColor, dot_size);
+
+  // Draw minute digits
+  int minute_y_offset = y_offset + height_of_block + TIME_CENTER_SPACING;
+  GRect first_minute_bound = GRect(0, minute_y_offset, bounds.size.w / 2, height_of_block);
+  draw_single_digit(layer, ctx, first_minute_bound, height_of_block, first_minute_digit, 1, settings.ForegroundColor, dot_size);
+  
+  GRect second_minute_bound = GRect(bounds.size.w / 2, minute_y_offset, bounds.size.w / 2, height_of_block);
+  draw_single_digit(layer, ctx, second_minute_bound, height_of_block, second_minute_digit, 0, settings.ForegroundColor, dot_size);
 
   // Draw AM/PM if 12-hour format is selected
-  if (settings.Setting24H == false && settings.SettingShowAMPM) {
-    // Determine if it's AM or PM based on the original hour
-    bool is_pm = t->tm_hour >= 12;
-    char ampm_text[3];
+  if (!settings.Setting24H && settings.SettingShowAMPM) {
+    const char *ampm_text = (t->tm_hour >= 12) ? "PM" : "AM";
     
-    if (is_pm) {
-        strcpy(ampm_text, "PM");
-    } else {
-        strcpy(ampm_text, "AM");
-    }
+    GSize ampm_size = graphics_text_layout_get_content_size(ampm_text, s_date_font, bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft);
     
-    GSize ampm_size = graphics_text_layout_get_content_size(ampm_text, s_date_font,  bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft);
+    int top_padding = settings.DotThickness ? 0 : 8;
+    int left_padding = settings.DotThickness ? 5 : 0;
     
-    int top_padding = 8;
-    int left_padding = 0;
-    if (settings.DotThickness == true) {
-      top_padding = 0;
-      #if defined(PBL_PLATFORM_CHALK)
-        // For Chalk, adjust the padding
+    #if defined(PBL_PLATFORM_CHALK)
+      if (settings.DotThickness) {
         top_padding = 10;
-      #endif
-      left_padding = 5;
-    }
+      }
+    #endif
 
-    int ampm_x = (bounds.size.w / 2) + ((hight_of_block / 7) * 5) + 10 + left_padding; 
-    // Align bottom of AM/PM with bottom of minutes
-    int ampm_y = bounds.size.h - 30 - ampm_size.h - top_padding;
+    int ampm_x = (bounds.size.w / 2) + ((height_of_block / 7) * 5) + 10 + left_padding; 
+    int ampm_y = bounds.size.h - BOTTOM_MARGIN - ampm_size.h - top_padding;
     
-    GRect ampm_bounds = GRect(ampm_x, ampm_y, 30, 20);
+    GRect ampm_bounds = GRect(ampm_x, ampm_y, AMPM_WIDTH, AMPM_HEIGHT);
     graphics_draw_text(ctx, ampm_text, s_date_font, ampm_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
   }
 }
 
 static void draw_watchface(Layer *layer, GContext *ctx) {
-
   // Get the bounds of the canvas
   GRect bounds = layer_get_bounds(layer);
 
   graphics_context_set_text_color(ctx, settings.ForegroundColor);
 
-  GRect top_bounds = GRect(0, 3, bounds.size.w, 20);
-  GRect low_bounds = GRect(0, bounds.size.h - 30, bounds.size.w, 20);
+  GRect top_bounds = GRect(0, 3, bounds.size.w, MODULE_HEIGHT);
+  GRect bottom_bounds = GRect(0, bounds.size.h - BOTTOM_MARGIN, bounds.size.w, MODULE_HEIGHT);
   
-  //top module
-  if (strcmp(settings.TopModule, "steps") == 0) draw_steps(layer, ctx, top_bounds, s_date_font, s_step_count);
-  if (strcmp(settings.TopModule, "date") == 0) draw_date(layer, ctx, top_bounds, s_date_font);
-  // center module
+  // Top module
+  draw_module(layer, ctx, top_bounds, settings.TopModule);
+  
+  // Center module (time)
   draw_time(layer, ctx);
-  //bottom module
-  if (strcmp(settings.BottomModule, "steps") == 0) draw_steps(layer, ctx, low_bounds, s_date_font, s_step_count);
-  if (strcmp(settings.BottomModule, "date") == 0) draw_date(layer, ctx, low_bounds, s_date_font);
-
+  
+  // Bottom module
+  draw_module(layer, ctx, bottom_bounds, settings.BottomModule);
 }
 
 static void main_window_load(Window *window) {
@@ -161,8 +152,12 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(s_canvas_layer, draw_watchface);
   layer_add_child(window_get_root_layer(window), s_canvas_layer);
   
-  // Load fonts
+  // Load fonts with error handling
   s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXEL_FONT_22));
+  if (!s_date_font) {
+    // Fallback to system font if custom font fails to load
+    s_date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  }
 
   prv_update_display();
 }
@@ -226,6 +221,24 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     snprintf(settings.BottomModule, sizeof(settings.BottomModule), "%s", bottom_module_t->value->cstring);
   }
 
+  // Weather Temperature
+  Tuple *weather_temp_t = dict_find(iter, MESSAGE_KEY_WeatherTemperature);
+  if (weather_temp_t) {
+    settings.WeatherTemperature = weather_temp_t->value->int32;
+  }
+
+  // Weather Condition
+  Tuple *weather_condition_t = dict_find(iter, MESSAGE_KEY_WeatherCondition);
+  if (weather_condition_t) {
+    snprintf(settings.WeatherCondition, sizeof(settings.WeatherCondition), "%s", weather_condition_t->value->cstring);
+  }
+
+  // Weather Use Fahrenheit
+  Tuple *weather_fahrenheit_t = dict_find(iter, MESSAGE_KEY_WeatherUseFahrenheit);
+  if (weather_fahrenheit_t) {
+    settings.WeatherUseFahrenheit = weather_fahrenheit_t->value->int32 == 1;
+  }
+
   // Save the new settings to persistent storage
   prv_save_settings();
 }
@@ -257,7 +270,9 @@ static void init() {
 
 static void deinit() {
   // Deinitialize custom fonts
-  fonts_unload_custom_font(s_date_font);
+  if (s_date_font && s_date_font != fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD)) {
+    fonts_unload_custom_font(s_date_font);
+  }
 
   window_destroy(s_main_window);
 }
