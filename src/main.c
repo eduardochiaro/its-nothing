@@ -153,7 +153,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_get_root_layer(window), s_canvas_layer);
   
   // Load fonts with error handling
-  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXEL_FONT_22));
+  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PIXEL_FONT_20));
   if (!s_date_font) {
     // Fallback to system font if custom font fails to load
     s_date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
@@ -224,7 +224,7 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   // Weather Temperature
   Tuple *weather_temp_t = dict_find(iter, MESSAGE_KEY_WeatherTemperature);
   if (weather_temp_t) {
-    settings.WeatherTemperature = weather_temp_t->value->int32;
+    settings.WeatherTemperature = weather_temp_t->value->int32;  // Temperature is always in Celsius from JavaScript
   }
 
   // Weather Condition

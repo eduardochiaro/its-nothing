@@ -3,7 +3,7 @@ var clayConfig = require('./config');
 var clay = new Clay(clayConfig);
 
 // Weather functionality
-var lastWeatherData = null; // Store last weather data for unit conversion
+var lastWeatherData = null; // Store last weather data
 
 function getLocation(successCallback, errorCallback) {
   navigator.geolocation.getCurrentPosition(
@@ -20,13 +20,8 @@ function getLocation(successCallback, errorCallback) {
   );
 }
 
-function celsiusToFahrenheit(celsius) {
-  return Math.round((celsius * 9/5) + 32);
-}
-
-function fetchWeather(lat, lon, useF, successCallback, errorCallback) {
-  if (useF === undefined) useF = false;
-  // Always fetch in Celsius and convert client-side if needed
+function fetchWeather(lat, lon, successCallback, errorCallback) {
+  // Always fetch in Celsius - conversion will be done in C code
   var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&temperature_unit=celsius';
   
   var xhr = new XMLHttpRequest();
@@ -37,18 +32,17 @@ function fetchWeather(lat, lon, useF, successCallback, errorCallback) {
         try {
           var data = JSON.parse(xhr.responseText);
           if (data.current_weather) {
-            var tempCelsius = data.current_weather.temperature;
-            var temperature = useF ? celsiusToFahrenheit(tempCelsius) : Math.round(tempCelsius);
+            var tempCelsius = Math.round(data.current_weather.temperature);
             var condition = getWeatherCondition(data.current_weather.weathercode);
             
-            // Store weather data for unit conversion
+            // Store weather data for caching
             lastWeatherData = {
               tempCelsius: tempCelsius,
               condition: condition
             };
             
             successCallback({
-              temperature: temperature,
+              temperature: tempCelsius, // Always send Celsius to C code
               condition: condition
             });
           } else {
@@ -88,19 +82,18 @@ function getWeatherCondition(weatherCode) {
   return 'UNKNOWN';
 }
 
-function updateWeather(useFahrenheit = false) {
-  console.log('Fetching weather data... (' + (useFahrenheit ? 'Fahrenheit' : 'Celsius') + ')');
+function updateWeather() {
+  console.log('Fetching weather data in Celsius...');
   
   getLocation(
     function(location) {
       console.log('Got location: ' + location.lat + ', ' + location.lon);
       
-      fetchWeather(location.lat, location.lon, useFahrenheit,
+      fetchWeather(location.lat, location.lon,
         function(weather) {
-          var unit = useFahrenheit ? 'F' : 'C';
-          console.log('Weather: ' + weather.temperature + '°' + unit + ', ' + weather.condition);
+          console.log('Weather: ' + weather.temperature + '°C, ' + weather.condition);
           
-          // Send weather data to watch
+          // Send weather data to watch (always in Celsius)
           Pebble.sendAppMessage({
             'WeatherTemperature': weather.temperature,
             'WeatherCondition': weather.condition
@@ -136,15 +129,7 @@ function updateWeather(useFahrenheit = false) {
 // Update weather on app start and every 30 minutes
 Pebble.addEventListener('ready', function() {
   console.log('PebbleKit JS ready!');
-  
-  // Initialize temperature unit from stored settings
-  var settings = JSON.parse(localStorage.getItem('clay-settings') || '{}');
-  if (settings.WeatherUseFahrenheit !== undefined) {
-    var useFahrenheit = settings.WeatherUseFahrenheit;
-    console.log('Initialized temperature unit: ' + (useFahrenheit ? 'Fahrenheit' : 'Celsius'));
-  }
-  
-  updateWeather(useFahrenheit);
+  updateWeather();
   
   // Update weather every 30 minutes
   setInterval(updateWeather, 30 * 60 * 1000);
@@ -157,27 +142,15 @@ Pebble.addEventListener('webviewclosed', function(e) {
   }
   
   var claySettings = clay.getSettings(e.response);
+  console.log('Configuration received: ' + JSON.stringify(claySettings));
   
-  var newUseFahrenheit = claySettings.WeatherUseFahrenheit;
-  console.log('Fahrenheit setting from config: ' + newUseFahrenheit);
-
-  // If we have cached weather data, convert it instead of refetching
+  // Send cached weather data if available (C code will handle conversion)
   if (lastWeatherData) {
-    var temperature = claySettings.WeatherUseFahrenheit ? 
-      celsiusToFahrenheit(lastWeatherData.tempCelsius) : 
-      Math.round(lastWeatherData.tempCelsius);
-      
-    console.log('Converting cached temperature: ' + temperature + '°' + (newUseFahrenheit ? 'F' : 'C'));
-    
+    console.log('Sending cached weather data to watch');
     Pebble.sendAppMessage({
-      'WeatherTemperature': temperature,
+      'WeatherTemperature': lastWeatherData.tempCelsius,
       'WeatherCondition': lastWeatherData.condition
     });
-  } else {
-    // No cached data, fetch new weather
-    setTimeout(function() {
-      updateWeather(claySettings.WeatherUseFahrenheit);
-    }, 1000);
   }
   
   // Send all configuration to watch
