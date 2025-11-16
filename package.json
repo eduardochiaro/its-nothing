@@ -1,6 +1,6 @@
 {
   "name": "its-nothing",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Watchface for pebble smartwatches inspired by NothingOS by NOTHING",
   "main": "src/main.c",
   "scripts": {
@@ -44,6 +44,7 @@
       "ForegroundColor",
       "Setting24H",
       "SettingShowAMPM",
+      "SettingShowSeconds",
       "DotThickness",
       "TopModule",
       "BottomModule",

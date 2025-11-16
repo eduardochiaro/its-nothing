@@ -20,6 +20,7 @@ static void prv_default_settings() {
   settings.ForegroundColor = GColorWhite;
   settings.Setting24H = false;
   settings.SettingShowAMPM = true;
+  settings.SettingShowSeconds = false;
   settings.DotThickness = false;
   snprintf(settings.TopModule, sizeof(settings.TopModule), "date");
   snprintf(settings.BottomModule, sizeof(settings.BottomModule), "weather");
@@ -125,6 +126,29 @@ static void draw_time(Layer *layer, GContext *ctx) {
     GRect ampm_bounds = GRect(ampm_x, ampm_y, AMPM_WIDTH, AMPM_HEIGHT);
     graphics_draw_text(ctx, ampm_text, s_date_font, ampm_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
   }
+
+  // Draw seconds if enabled
+  if (settings.SettingShowSeconds) {
+    char seconds_text[3];
+    snprintf(seconds_text, sizeof(seconds_text), "%02d", t->tm_sec);
+    
+    GSize seconds_size = graphics_text_layout_get_content_size(seconds_text, s_date_font, bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft);
+    
+    int top_padding = settings.DotThickness ? 10 : 18;
+    int left_padding = settings.DotThickness ? 5 : 0;
+    
+    #if defined(PBL_PLATFORM_CHALK)
+      if (settings.DotThickness) {
+        top_padding = 20;
+      }
+    #endif
+
+    int seconds_x = (bounds.size.w / 2) + ((height_of_block / 7) * 5) + 10 + left_padding; 
+    int seconds_y = y_offset - top_padding + 5;
+    
+    GRect seconds_bounds = GRect(seconds_x, seconds_y, AMPM_WIDTH, AMPM_HEIGHT);
+    graphics_draw_text(ctx, seconds_text, s_date_font, seconds_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+  }
 }
 
 static void draw_watchface(Layer *layer, GContext *ctx) {
@@ -203,6 +227,19 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     settings.SettingShowAMPM = setting_ampm_t->value->int32 == 1;
   }
 
+  // Seconds show/hide
+  Tuple *setting_seconds_t = dict_find(iter, MESSAGE_KEY_SettingShowSeconds);
+  if(setting_seconds_t) {
+    settings.SettingShowSeconds = setting_seconds_t->value->int32 == 1;
+    // Update tick timer subscription based on seconds setting
+    tick_timer_service_unsubscribe();
+    if (settings.SettingShowSeconds) {
+      tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+    } else {
+      tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+    }
+  }
+
   // Dot Thickness
   Tuple *dot_thickness_t = dict_find(iter, MESSAGE_KEY_DotThickness);
   if(dot_thickness_t) {
@@ -265,7 +302,12 @@ static void init() {
   update_steps();
   
   window_stack_push(s_main_window, true);
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  // Subscribe to appropriate time units based on seconds setting
+  if (settings.SettingShowSeconds) {
+    tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+  } else {
+    tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  }
 }
 
 static void deinit() {

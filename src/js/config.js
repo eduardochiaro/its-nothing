@@ -47,6 +47,13 @@ module.exports = [
       },
       {
         "type": "toggle",
+        "messageKey": "SettingShowSeconds",
+        "label": "Show Seconds",
+        "defaultValue": false,
+        "description": "Display seconds above the time. Updates every second when enabled."
+      },
+      {
+        "type": "toggle",
         "messageKey": "DotThickness",
         "label": "Make Number Dots Thicker",
         "defaultValue": false,

@@ -17,6 +17,7 @@ typedef struct ClaySettings {
   GColor ForegroundColor;
   bool Setting24H;
   bool SettingShowAMPM;
+  bool SettingShowSeconds;
   bool DotThickness;
   char TopModule[20];
   char BottomModule[20];
